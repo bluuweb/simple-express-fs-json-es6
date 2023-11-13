@@ -1,86 +1,96 @@
 import cors from "cors";
+import "dotenv/config";
 import express from "express";
-import { nanoid } from "nanoid";
-import { readFile, writeFile } from "node:fs/promises";
+import { todoModel } from "./models/todo.model.js";
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
 
-const getTodos = async () => {
-  const fsResponse = await readFile("todos.json", "utf-8");
-  const todos = JSON.parse(fsResponse);
-  return todos;
-};
-
+// GET /todos
 app.get("/todos", async (req, res) => {
-  const todos = await getTodos();
-  res.json(todos);
+  try {
+    const todos = await todoModel.findAll();
+    return res.json(todos);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
+// GET /todos/:id
 app.get("/todos/:id", async (req, res) => {
   const id = req.params.id;
-  const todos = await getTodos();
-  const todo = todos.find((todo) => todo.id === id);
 
-  if (!todo) {
-    res.status(404).json({ message: "Todo not found" });
+  try {
+    const todo = await todoModel.findById(id);
+
+    if (!todo) {
+      res.status(404).json({ message: "Todo not found" });
+    }
+    res.json(todo);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-  res.json(todo);
 });
 
+// POST /todos
 app.post("/todos", async (req, res) => {
   const { title } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ message: "Title is required" });
+  }
+
   const newTodo = {
-    id: nanoid(),
     title,
     done: false,
   };
-  let todos = await getTodos();
-  todos.push(newTodo);
-  await writeFile("todos.json", JSON.stringify(todos));
-  res.status(201).json(newTodo);
+  try {
+    const todo = await todoModel.create(newTodo);
+    return res.json(todo);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
+// PUT /todos/:id
 app.put("/todos/:id", async (req, res) => {
   const id = req.params.id;
 
-  let todos = await getTodos();
-  const todo = todos.find((todo) => todo.id === id);
-
-  if (!todo) {
-    res.status(404).json({ message: "Todo not found" });
-  }
-
-  todos = todos.map((todo) => {
-    if (todo.id === id) {
-      return { ...todo, done: !todo.done };
+  try {
+    const todo = await todoModel.update(id);
+    if (!todo) {
+      return res.status(404).json({ message: "Todo not found" });
     }
-    return todo;
-  });
-
-  await writeFile("todos.json", JSON.stringify(todos));
-
-  res.json(todos);
+    return res.json(todo);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
+// DELETE /todos/:id
 app.delete("/todos/:id", async (req, res) => {
   const id = req.params.id;
 
-  let todos = await getTodos();
-  const todo = todos.find((todo) => todo.id === id);
-
-  if (!todo) {
-    res.status(404).json({ message: "Todo not found" });
+  try {
+    const todo = await todoModel.remove(id);
+    if (!todo) {
+      return res.status(404).json({ message: "Todo not found" });
+    }
+    return res.json({ message: "Todo deleted" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-
-  todos = todos.filter((todo) => todo.id !== id);
-
-  await writeFile("todos.json", JSON.stringify(todos));
-  res.json(todos);
 });
 
-app.listen(5000, () => {
-  console.log("Example app listening on port 5000");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server listening on port http://localhost:${PORT}`);
 });
