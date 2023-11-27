@@ -13,7 +13,12 @@ const read = async (req, res) => {
   }
 
   try {
-    const todos = await todoModel.findAll({ limit, order, page });
+    const todos = await todoModel.findAll({
+      limit,
+      order,
+      page,
+      user: req.user,
+    });
     return res.json(todos);
   } catch (error) {
     console.log(error);
@@ -29,7 +34,7 @@ const readById = async (req, res) => {
   const id = req.params.id;
 
   try {
-    const todo = await todoModel.findById(id);
+    const todo = await todoModel.findById(id, req.user);
 
     if (!todo) {
       res.status(404).json({ message: "Todo not found" });
@@ -57,7 +62,7 @@ const create = async (req, res) => {
     done: false,
   };
   try {
-    const todo = await todoModel.create(newTodo);
+    const todo = await todoModel.create(newTodo, req.user);
     return res.status(201).json(todo);
   } catch (error) {
     console.log(error);
@@ -73,7 +78,7 @@ const update = async (req, res) => {
   const id = req.params.id;
 
   try {
-    const todo = await todoModel.update(id);
+    const todo = await todoModel.update(id, req.user);
     if (!todo) {
       return res.status(404).json({ message: "Todo not found" });
     }
@@ -92,7 +97,7 @@ const remove = async (req, res) => {
   const id = req.params.id;
 
   try {
-    const todo = await todoModel.remove(id);
+    const todo = await todoModel.remove(id, req.user);
     if (!todo) {
       return res.status(404).json({ message: "Todo not found" });
     }

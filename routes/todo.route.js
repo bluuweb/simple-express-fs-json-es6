@@ -1,8 +1,12 @@
 import { todoController } from "../controllers/todo.controller.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 import { Router } from "express";
 
 const router = Router();
+
+// Middleware global para todas las rutas
+router.use(authMiddleware);
 
 // GET /todos
 router.get("/", todoController.read);
