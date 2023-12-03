@@ -5,7 +5,11 @@ import express from "express";
 import todoRoute from "./routes/todo.route.js";
 import userRoute from "./routes/user.route.js";
 
-const app = express();
+export const app = express();
+
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to my API" });
+});
 
 app.use(express.json());
 app.use(cors());
